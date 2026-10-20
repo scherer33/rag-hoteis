@@ -12,6 +12,7 @@ htmlcov/
 # generated artifacts
 data/index.jsonl
 data/generated/
-results/
+results/*
+!results/.gitkeep
 models/
 .superpowers/
