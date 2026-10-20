@@ -35,6 +35,7 @@ package = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 markers = ["integration: tests that need local models or running services"]
 addopts = "-q"
 
