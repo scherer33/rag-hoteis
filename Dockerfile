@@ -1,0 +1,53 @@
+# syntax=docker/dockerfile:1
+
+# ---------- base: shared toolchain and dependency cache ----------
+FROM python:3.12-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    HF_HOME=/models \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    PATH="/app/.venv/bin:$PATH"
+
+COPY --from=ghcr.io/astral-sh/uv:0.13.4 /uv /uvx /bin/
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock README.md ./
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-install-project --all-extras
+
+# ---------- dev: tests, lint and local tooling ----------
+FROM base AS dev
+
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --all-extras
+
+CMD ["pytest"]
+
+# ---------- runtime: API and UI ----------
+FROM base AS runtime
+
+COPY src/ ./src/
+COPY api/ ./api/
+COPY ui/ ./ui/
+COPY scripts/ ./scripts/
+COPY config/ ./config/
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --no-dev --extra ml
+
+RUN mkdir -p /models \
+    && useradd --create-home --uid 10001 app \
+    && chown -R app:app /app /models
+
+USER app
+
+EXPOSE 8000 8501
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
+
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]

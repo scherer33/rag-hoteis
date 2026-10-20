@@ -1,0 +1,6 @@
+# LLM provider configuration (no secrets here).
+# The API key is read from the LLM_API_KEY environment variable only.
+base_url: http://host.docker.internal:20128/v1
+model: "" # set after listing the models available on the 9router
+temperature: 0.0
+timeout_seconds: 60

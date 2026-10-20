@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+models
+data/index.jsonl
+data/generated
+results
+__pycache__
+.pytest_cache
+.ruff_cache
+htmlcov
+.superpowers
+docs
