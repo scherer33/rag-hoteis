@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-# ---------- base: shared toolchain and dependency cache ----------
+# ---------- base: shared toolchain and production dependency cache ----------
 FROM python:3.12-slim AS base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
@@ -8,7 +8,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     HF_HOME=/models \
     UV_COMPILE_BYTECODE=1 \
     UV_LINK_MODE=copy \
-    PATH="/app/.venv/bin:$PATH"
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    PATH="/opt/venv/bin:$PATH"
 
 COPY --from=ghcr.io/astral-sh/uv:0.13.4 /uv /uvx /bin/
 
@@ -16,7 +17,7 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --no-install-project --all-extras
+    uv sync --no-install-project --no-dev --extra ml
 
 # ---------- dev: tests, lint and local tooling ----------
 FROM base AS dev
@@ -27,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 CMD ["pytest"]
 
-# ---------- runtime: API and UI ----------
+# ---------- runtime: API and UI only ----------
 FROM base AS runtime
 
 COPY src/ ./src/
