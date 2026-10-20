@@ -50,10 +50,5 @@ def test_golden_dataset_references_real_documents():
     known = {document.metadata.doc_id for document in load_corpus(root / "data" / "corpus")}
     items = load_golden(root / "data" / "golden" / "golden_set.jsonl")
 
-    missing = {
-        doc_id
-        for item in items
-        for doc_id in item.relevant_doc_ids
-        if doc_id not in known
-    }
+    missing = {doc_id for item in items for doc_id in item.relevant_doc_ids if doc_id not in known}
     assert missing == set()

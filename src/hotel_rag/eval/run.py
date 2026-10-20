@@ -76,6 +76,8 @@ def build_configs(
 
     documents = load_corpus(corpus_dir)
     chunks = [chunk for document in documents for chunk in chunk_document(document)]
+    if store.count() == 0:
+        store.upsert(chunks, embedder.embed_documents([chunk.text for chunk in chunks]))
     bm25 = BM25Index(chunks)
     reranker = CrossEncoderReranker(settings.rerank_model)
 
