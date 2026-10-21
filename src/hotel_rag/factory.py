@@ -6,6 +6,7 @@ from hotel_rag.config import Settings
 from hotel_rag.corpus import load_corpus
 from hotel_rag.embeddings import Embedder, SentenceTransformerEmbedder
 from hotel_rag.generation import AnswerGenerator, LLMClient
+from hotel_rag.llm import OpenAICompatClient
 from hotel_rag.pipeline import HotelRAG
 from hotel_rag.rerank import CrossEncoderReranker, Reranker
 from hotel_rag.retrieval import Retriever
@@ -51,19 +52,23 @@ def build_pipeline(
     return HotelRAG(retriever, generator)
 
 
+def create_llm_client(settings: Settings) -> LLMClient:
+    """Build the OpenAI-compatible client from settings (env overrides YAML)."""
+    return OpenAICompatClient(
+        base_url=settings.llm_base_url,
+        api_key=settings.llm_api_key,
+        model=settings.llm_model,
+        temperature=settings.llm_temperature,
+        timeout_seconds=settings.llm_timeout_seconds,
+    )
+
+
 def build_default_pipeline(settings: Settings, corpus_dir: Path = Path("data/corpus")) -> HotelRAG:
     """Production wiring from environment settings."""
-    from hotel_rag.llm import OpenAICompatClient
-
     embedder = SentenceTransformerEmbedder(settings.embed_model)
     store = ChunkStore(
         url=settings.qdrant_url,
         collection=settings.qdrant_collection,
         vector_size=embedder.dimension,
     )
-    llm = OpenAICompatClient(
-        base_url=settings.llm_base_url,
-        api_key=settings.llm_api_key,
-        model=settings.llm_model,
-    )
-    return build_pipeline(settings, corpus_dir, embedder, store, llm)
+    return build_pipeline(settings, corpus_dir, embedder, store, create_llm_client(settings))

@@ -13,7 +13,9 @@ class OpenAICompatClient:
         timeout_seconds: float = 60.0,
     ) -> None:
         if not model:
-            raise ValueError("llm_model is not configured (set LLM_MODEL in .env)")
+            raise ValueError(
+                "llm_model is not configured (set model in config/llm.yaml or LLM_MODEL)"
+            )
 
         self.model = model
         self.temperature = temperature

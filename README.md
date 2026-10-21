@@ -66,6 +66,12 @@ make up                       # API :8000 + UI :8501
 - API/OpenAPI: <http://localhost:8000/docs>
 - Qdrant: <http://localhost:6333/dashboard>
 
+Configuração do LLM: `config/llm.yaml` guarda apenas os valores não-secretos
+(`base_url`, `model`, `temperature`, `timeout_seconds`). Variáveis de ambiente e
+`.env` têm precedência sobre o ficheiro. A chave (`LLM_API_KEY`) só existe no
+ambiente; o `config/llm.yaml` rejeita `api_key` explicitamente para evitar
+segredos versionados.
+
 Testes (ambiente canónico):
 
 ```bash

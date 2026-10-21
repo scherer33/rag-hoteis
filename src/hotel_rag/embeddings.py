@@ -23,7 +23,11 @@ class SentenceTransformerEmbedder:
 
     @property
     def dimension(self) -> int:
-        return int(self._load().get_sentence_embedding_dimension())
+        model = self._load()
+        get_dimension = getattr(model, "get_embedding_dimension", None) or (
+            model.get_sentence_embedding_dimension
+        )
+        return int(get_dimension())
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
         vectors = self._load().encode(texts, normalize_embeddings=True)

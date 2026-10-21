@@ -1,4 +1,29 @@
+from hotel_rag.embeddings import SentenceTransformerEmbedder
 from tests.fakes import FakeEmbedder
+
+
+class _NewApiModel:
+    def get_embedding_dimension(self) -> int:
+        return 1024
+
+
+class _LegacyApiModel:
+    def get_sentence_embedding_dimension(self) -> int:
+        return 768
+
+
+def test_dimension_uses_current_sentence_transformers_api():
+    embedder = SentenceTransformerEmbedder("fake")
+    embedder._model = _NewApiModel()
+
+    assert embedder.dimension == 1024
+
+
+def test_dimension_falls_back_to_legacy_api():
+    embedder = SentenceTransformerEmbedder("fake")
+    embedder._model = _LegacyApiModel()
+
+    assert embedder.dimension == 768
 
 
 def test_fake_embedder_is_deterministic():

@@ -1,6 +1,7 @@
-# LLM provider configuration (no secrets here).
-# The API key is read from the LLM_API_KEY environment variable only.
+# Non-secret LLM settings: defaults only.
+# Precedence: environment variables > .env > this file > built-in defaults.
+# The API key is read from LLM_API_KEY only and is rejected here on purpose.
 base_url: http://host.docker.internal:20128/v1
-model: "" # set after listing the models available on the 9router
+model: "" # model id exposed by your 9router / omniroute instance
 temperature: 0.0
 timeout_seconds: 60

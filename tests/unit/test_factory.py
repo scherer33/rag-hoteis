@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from hotel_rag.config import Settings
-from hotel_rag.factory import build_pipeline
+from hotel_rag.factory import build_pipeline, create_llm_client
 from hotel_rag.models import RetrievedChunk
 from hotel_rag.store import ChunkStore
 from tests.fakes import FakeEmbedder
@@ -70,3 +70,31 @@ def test_existing_index_is_not_rebuilt(tmp_path):
     )
 
     assert store.count() == count
+
+
+def test_create_llm_client_passes_all_settings(monkeypatch):
+    captured = {}
+
+    class Client:
+        def __init__(self, **kwargs):
+            captured.update(kwargs)
+
+    monkeypatch.setattr("hotel_rag.factory.OpenAICompatClient", Client)
+    settings = Settings(
+        _env_file=None,
+        llm_model="model-x",
+        llm_base_url="http://llm:1234/v1",
+        llm_api_key="k",
+        llm_temperature=0.2,
+        llm_timeout_seconds=5,
+    )
+
+    create_llm_client(settings)
+
+    assert captured == {
+        "base_url": "http://llm:1234/v1",
+        "api_key": "k",
+        "model": "model-x",
+        "temperature": 0.2,
+        "timeout_seconds": 5,
+    }
