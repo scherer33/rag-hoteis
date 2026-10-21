@@ -157,8 +157,9 @@ docs/decisions/       ADRs
   foram redigidas a partir dos documentos, não por um especialista independente.
 - **Uma propriedade:** o campo `property_id` existe como gancho para multi-hotel,
   mas não é usado em filtros nesta versão.
-- **Latência em CPU:** o reranker domina o tempo de resposta. GPU é suportada por
-  profile opcional, mas não é necessária para os testes.
+- **Latência em CPU:** o reranker domina o tempo de resposta. A imagem de deploy
+  é CPU-only (torch do índice `pytorch-cpu`), o que corta ~5 GB de wheels CUDA;
+  para acelerar localmente, o profile `gpu` constrói um target com torch CUDA.
 - **Demo pública (HF Spaces):** usa Qdrant in-memory e reconstrói o índice no
   arranque; o cold start é lento e o estado não persiste.
 - **RAGAS** está no extra `eval`, mas não corre no CI (exige chave de LLM e

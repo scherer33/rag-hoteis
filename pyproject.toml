@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-ml = ["sentence-transformers>=3"]
+ml = ["sentence-transformers>=3", "torch>=2"]
 eval = ["ragas>=0.2"]
 dev = ["pytest>=8", "pytest-cov>=5", "ruff>=0.6"]
 
@@ -32,6 +32,16 @@ packages = ["src/hotel_rag"]
 
 [tool.uv]
 package = true
+
+# CPU-only torch: the deploy target is Hugging Face Spaces (free tier, no GPU).
+# This keeps the image ~5 GB smaller and makes local runs match production.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

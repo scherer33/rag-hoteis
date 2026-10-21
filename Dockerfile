@@ -53,3 +53,15 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"
 
 CMD ["bash", "scripts/start_space.sh"]
+
+# ---------- runtime-gpu: opt-in CUDA build for local GPU runs ----------
+# Only built by the compose `gpu` profile; the default runtime stays CPU-only
+# so the Hugging Face Space image (and CI) does not carry ~5 GB of CUDA wheels.
+FROM runtime AS runtime-gpu
+
+USER root
+
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --python /opt/venv/bin/python --reinstall torch
+
+USER app

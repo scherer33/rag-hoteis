@@ -84,7 +84,7 @@ services:
     profiles: ["gpu"]
     build:
       context: .
-      target: runtime
+      target: runtime-gpu
     env_file:
       - path: .env
         required: false

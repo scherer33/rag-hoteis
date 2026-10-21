@@ -28,8 +28,12 @@ Detalhes que evitam armadilhas comuns:
 - **`--no-install-project` na stage base:** as dependências são cacheadas antes
   de copiar o código, invalidando a cache só quando `pyproject.toml`/`uv.lock`
   mudam.
-- **GPU é opt-in:** `docker compose --profile gpu up api-gpu`, porque exige
-  `nvidia-container-toolkit` no host.
+- **Torch CPU por omissão:** `pyproject.toml` fixa `torch` ao índice
+  `pytorch-cpu`, o que remove ~5 GB de wheels CUDA da imagem de deploy (HF
+  Spaces é CPU-only). Localmente, o mesmo lock mantém CPU e produção iguais.
+- **GPU é opt-in de verdade:** `docker compose --profile gpu up api-gpu` constrói
+  o target `runtime-gpu`, que reinstala o wheel CUDA do PyPI (e exige
+  `nvidia-container-toolkit` no host); a imagem por omissão não é afetada.
 - **HF Spaces:** um único container corre a API em `localhost:8000` e o
   Streamlit em `0.0.0.0:8501` (`scripts/start_space.sh`), com Qdrant in-memory.
 
