@@ -1,5 +1,11 @@
 from hotel_rag.models import Citation, Dept
-from ui.logic import citation_label, citation_markdown, citations_from_payload
+from ui.logic import (
+    ABSTAIN_NOTICE,
+    answer_text,
+    citation_label,
+    citation_markdown,
+    citations_from_payload,
+)
 
 
 def test_label_includes_dept_and_page():
@@ -76,3 +82,16 @@ def test_citations_from_api_json_payload():
     assert isinstance(citations[0], Citation)
     assert citation_label(citations[0]) == "[1] AC erro E3 · manutencao · pág. 3"
     assert citation_markdown(citations[0]).startswith("**a**")
+
+
+def test_answer_text_returns_grounded_answer():
+    payload = {"text": "O check-out é às 11h00 [1].", "abstained": False}
+
+    assert answer_text(payload) == "O check-out é às 11h00 [1]."
+
+
+def test_answer_text_hides_the_abstain_marker():
+    payload = {"text": "ABSTAIN", "abstained": True}
+
+    assert answer_text(payload) == ABSTAIN_NOTICE
+    assert "ABSTAIN" not in ABSTAIN_NOTICE

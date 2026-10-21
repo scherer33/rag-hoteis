@@ -1,5 +1,16 @@
 from hotel_rag.models import Citation
 
+ABSTAIN_NOTICE = (
+    "Não encontrei informação suficiente na documentação para responder com segurança."
+)
+
+
+def answer_text(payload: dict) -> str:
+    """Text to display and keep in history; never leak the internal ABSTAIN marker."""
+    if payload.get("abstained", True):
+        return ABSTAIN_NOTICE
+    return payload.get("text", "")
+
 
 def citations_from_payload(payload: list[dict]) -> list[Citation]:
     """Parse the JSON citations returned by /answer into domain objects."""

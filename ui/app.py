@@ -6,7 +6,7 @@ import requests
 import streamlit as st
 
 from hotel_rag.models import Dept
-from ui.logic import citation_label, citation_markdown, citations_from_payload
+from ui.logic import answer_text, citation_label, citation_markdown, citations_from_payload
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 DEPARTMENTS = ["todos", *(dept.value for dept in Dept)]
@@ -76,7 +76,7 @@ def main() -> None:
                 st.error(f"Não foi possível contactar a API: {error}")
                 return
 
-        text = answer.get("text", "")
+        text = answer_text(answer)
         if not text:
             st.error("A API devolveu uma resposta inesperada.")
             return
