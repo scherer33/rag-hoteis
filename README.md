@@ -1,13 +1,3 @@
----
-title: Hotel RAG Algarve
-emoji: 🏨
-colorFrom: blue
-colorTo: indigo
-sdk: docker
-app_port: 8501
-pinned: false
----
-
 # Hotel RAG — Algarve
 
 Sistema de **Retrieval-Augmented Generation** sobre os procedimentos operacionais
@@ -19,13 +9,27 @@ resposta.
 > Este repositório é uma peça de portfólio. O corpus é ficcional, mas a
 > arquitetura, os testes e a avaliação são reais.
 
+## UI
+
+![Pergunta e resposta com citações](docs/images/ui-answer.png)
+
+<details>
+<summary>Ecrã inicial e excerto citado</summary>
+
+![Ecrã inicial](docs/images/ui-home.png)
+
+![Excerto exato mostrado ao abrir uma citação](docs/images/ui-citation.png)
+
+</details>
+
 ## O que este projeto demonstra
 
 - **RAG completo e avaliado**: ingestão → chunking com offsets → embeddings
   locais → retrieval híbrido → reranking → geração com citações → abstenção.
 - **Comparação honesta de configurações**: `vector` vs. `hybrid` vs.
-  `hybrid_rerank`, com recall@k, MRR e nDCG@k sobre um golden set de 40 perguntas.
-  Os três modos são selecionáveis na UI e na API.
+  `hybrid_rerank`, com recall@k, MRR e nDCG@k sobre 40 perguntas base e um
+  conjunto difícil de 22 paráfrases. Os três modos são selecionáveis na UI e na
+  API.
 - **Citações rastreáveis**: cada citação aponta para `doc_id`, título,
   departamento e o excerto exato (com offsets de caracteres).
 - **Abstenção em vez de alucinação**: limiar de score + marcador explícito
@@ -91,7 +95,8 @@ uv run ruff check . && uv run ruff format --check .
 ## Avaliação
 
 ```bash
-make eval     # compara vector, hybrid e hybrid_rerank; escreve results/latest.json
+make eval       # 40 perguntas base; escreve results/latest.json
+make eval-hard  # 22 perguntas difíceis; escreve results/hard.json
 uv run python scripts/check_eval_threshold.py results/latest.json
 ```
 
@@ -124,6 +129,35 @@ benchmark mais difícil para justificar o custo".
 Um benchmark mais exigente (perguntas adversariais, paráfrases coloquiais,
 documentos distratores) é o próximo passo para tornar o recall discriminativo.
 
+### Benchmark difícil (22 perguntas)
+
+`data/golden/golden_set_hard.jsonl` foi escrito **sem reutilizar o vocabulário
+dos documentos**: paráfrases coloquiais, uma pergunta que exige dois documentos
+(check-in + check-out) e cinco em inglês. Corre-se com `make eval-hard`
+(relatório em `results/hard.json`).
+
+| Configuração | recall@5 | MRR | nDCG@5 |
+|---|---|---|---|
+| `vector` | 1.000 | 1.000 | 1.000 |
+| `hybrid` | 0.909 | 0.845 | 0.860 |
+| `hybrid_rerank` | **1.000** | **1.000** | **1.000** |
+
+O híbrido sem reranker falha duas perguntas — as duas mais curtas e mais
+distantes do texto original:
+
+- *"Deixei uma camisola no quarto. Quanto tempo a guardam?"* → devolve
+  `checkout`, `reclamacoes`, `queixas-fnb`, `plano-limpeza`; o documento certo
+  (`objetos-perdidos`) não entra no top-5.
+- *"How long can a guest keep an electric car plugged in, and is there a fee?"*
+  → devolve `checkin`, `vip`, `overbooking`, `checkout`; o BM25 não tem sinal
+  útil em inglês e o RRF dilui o resultado vetorial.
+
+O reranker recupera ambas e mantém 1.000. A conclusão honesta: **o híbrido só
+compensa com rerank**; sozinho, o BM25 acrescenta ruído em perguntas
+parafraseadas. E 22 perguntas num corpus de 35 documentos continuam a não
+distinguir `vector` de `hybrid_rerank` — para isso seria preciso um corpus maior,
+perguntas escritas por terceiros e documentos distratores.
+
 **Metodologia.** Para cada pergunta, o retriever devolve 5 chunks; as métricas são
 calculadas ao nível do `doc_id` (um documento relevante conta uma vez), com
 deduplicação que preserva a primeira ocorrência. O gate de CI (`eval-gate`) falha
@@ -138,9 +172,11 @@ api/                  FastAPI (/health, /answer)
 ui/                   Streamlit (cliente fino da API)
 scripts/              build_index.py, check_eval_threshold.py, start_space.sh
 data/corpus/          35 documentos markdown com frontmatter
-data/golden/          golden set JSONL (40 perguntas)
+data/golden/          golden sets JSONL (40 perguntas base + 22 difíceis)
+results/              relatórios de avaliação (latest.json, hard.json)
 tests/                unit (sem modelos) + integration (in-memory)
 docs/decisions/       ADRs
+docs/images/          capturas da UI usadas neste README
 ```
 
 ## Decisões de engenharia
@@ -161,8 +197,9 @@ docs/decisions/       ADRs
 - **Latência em CPU:** o reranker domina o tempo de resposta. A imagem de deploy
   é CPU-only (torch do índice `pytorch-cpu`), o que corta ~5 GB de wheels CUDA;
   para acelerar localmente, o profile `gpu` constrói um target com torch CUDA.
-- **Demo pública (HF Spaces):** usa Qdrant in-memory e reconstrói o índice no
-  arranque; o cold start é lento e o estado não persiste.
+- **Sem demo pública alojada:** a demo corre localmente com `docker compose`. O
+  código suporta Qdrant in-memory no arranque (`scripts/start_space.sh`), mas o
+  free tier do Hugging Face já não cobre Docker Spaces.
 - **Métricas de resposta (RAGAS):** não implementadas nesta versão. Exigem um
   modelo juiz e uma chave de LLM, o que tornaria a avaliação não determinística;
   as métricas de retrieval cobrem o que o CI consegue garantir offline. Ficam
@@ -170,4 +207,4 @@ docs/decisions/       ADRs
 
 ## Licença
 
-MIT.
+MIT — ver [LICENSE](LICENSE).
