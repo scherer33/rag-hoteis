@@ -1,8 +1,6 @@
 from hotel_rag.models import Citation
 
-ABSTAIN_NOTICE = (
-    "Não encontrei informação suficiente na documentação para responder com segurança."
-)
+ABSTAIN_NOTICE = "Não encontrei informação suficiente na documentação para responder com segurança."
 
 
 def answer_text(payload: dict) -> str:
