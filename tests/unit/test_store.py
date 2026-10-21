@@ -1,5 +1,8 @@
 from datetime import date
 
+import pytest
+from qdrant_client import QdrantClient
+
 from hotel_rag.models import Chunk, Dept, DocMetadata, DocType
 from hotel_rag.store import ChunkStore
 
@@ -62,3 +65,11 @@ def test_recreate_drops_stale_points():
     store.recreate()
 
     assert store.count() == 0
+
+
+def test_existing_collection_with_wrong_vector_size_is_rejected():
+    client = QdrantClient(location=":memory:")
+    ChunkStore(vector_size=8, client=client)
+
+    with pytest.raises(ValueError, match="8-dim"):
+        ChunkStore(vector_size=16, client=client)

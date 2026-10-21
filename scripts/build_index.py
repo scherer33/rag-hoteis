@@ -7,7 +7,7 @@ Usage:
 import argparse
 from pathlib import Path
 
-from hotel_rag.chunking import chunk_document
+from hotel_rag.chunking import DEFAULT_CHUNK_SIZE, DEFAULT_OVERLAP, chunk_document
 from hotel_rag.corpus import load_corpus
 from hotel_rag.embeddings import Embedder, SentenceTransformerEmbedder
 from hotel_rag.store import ChunkStore
@@ -17,8 +17,8 @@ def build_index(
     corpus_dir: Path,
     store: ChunkStore,
     embedder: Embedder,
-    chunk_size: int = 800,
-    overlap: int = 120,
+    chunk_size: int = DEFAULT_CHUNK_SIZE,
+    overlap: int = DEFAULT_OVERLAP,
 ) -> int:
     documents = load_corpus(corpus_dir)
     chunks = [
@@ -40,8 +40,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--qdrant-url", default="http://localhost:6333")
     parser.add_argument("--collection", default="hotel_docs")
     parser.add_argument("--embed-model", default="BAAI/bge-m3")
-    parser.add_argument("--chunk-size", type=int, default=800)
-    parser.add_argument("--overlap", type=int, default=120)
+    parser.add_argument("--chunk-size", type=int, default=DEFAULT_CHUNK_SIZE)
+    parser.add_argument("--overlap", type=int, default=DEFAULT_OVERLAP)
     parser.add_argument(
         "--append",
         action="store_true",

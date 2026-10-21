@@ -23,17 +23,32 @@ class ChunkStore:
         url: str = ":memory:",
         collection: str = DEFAULT_COLLECTION,
         vector_size: int = 1024,
+        client: QdrantClient | None = None,
     ) -> None:
         self.collection = collection
         self.vector_size = vector_size
-        self.client = QdrantClient(location=url) if url == ":memory:" else QdrantClient(url=url)
+        self.client = client or (
+            QdrantClient(location=url) if url == ":memory:" else QdrantClient(url=url)
+        )
         self._ensure_collection()
 
     def _ensure_collection(self) -> None:
-        if not self.client.collection_exists(self.collection):
-            self.client.create_collection(
-                collection_name=self.collection,
-                vectors_config=VectorParams(size=self.vector_size, distance=Distance.COSINE),
+        if self.client.collection_exists(self.collection):
+            self._check_vector_size()
+            return
+        self.client.create_collection(
+            collection_name=self.collection,
+            vectors_config=VectorParams(size=self.vector_size, distance=Distance.COSINE),
+        )
+
+    def _check_vector_size(self) -> None:
+        """Fail clearly when the existing collection was built with another embedder."""
+        vectors = self.client.get_collection(self.collection).config.params.vectors
+        size = getattr(vectors, "size", None)
+        if size is not None and int(size) != self.vector_size:
+            raise ValueError(
+                f"collection {self.collection!r} has {size}-dim vectors but the embedder "
+                f"produces {self.vector_size}; recreate the index (make index) or set EMBED_MODEL"
             )
 
     def recreate(self) -> None:

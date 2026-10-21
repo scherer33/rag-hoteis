@@ -1,7 +1,12 @@
 from hotel_rag.models import Chunk, Document
 
+DEFAULT_CHUNK_SIZE = 800
+DEFAULT_OVERLAP = 120
 
-def chunk_document(doc: Document, size: int = 800, overlap: int = 120) -> list[Chunk]:
+
+def chunk_document(
+    doc: Document, size: int = DEFAULT_CHUNK_SIZE, overlap: int = DEFAULT_OVERLAP
+) -> list[Chunk]:
     """Split a document into overlapping character windows with exact offsets.
 
     Boundaries prefer the last paragraph break or sentence end in the second

@@ -76,18 +76,19 @@ def main() -> None:
                 st.error(f"Não foi possível contactar a API: {error}")
                 return
 
-        if "text" not in answer:
+        text = answer.get("text", "")
+        if not text:
             st.error("A API devolveu uma resposta inesperada.")
             return
 
-        citations = citations_from_payload(answer.get("citations", []))
+        citations = citations_from_payload(answer.get("citations") or [])
 
-        if answer["abstained"]:
+        if answer.get("abstained", True):
             st.warning(
                 "Não encontrei informação suficiente na documentação para responder com segurança."
             )
         else:
-            st.markdown(answer["text"])
+            st.markdown(text)
 
         for index, citation in enumerate(citations, start=1):
             with st.expander(citation_label(citation, index), expanded=False):
@@ -96,7 +97,7 @@ def main() -> None:
         if citations:
             st.caption(f"Relevância: {answer.get('confidence', 0.0):.2f}")
 
-    st.session_state.messages.append({"role": "assistant", "content": answer["text"]})
+    st.session_state.messages.append({"role": "assistant", "content": text})
 
 
 if __name__ == "__main__":
