@@ -23,6 +23,15 @@ def test_dockerfile_is_multistage_nonroot_and_caches_models():
     assert "HF_HOME" in text
 
 
+def test_services_that_call_the_host_llm_map_host_gateway():
+    compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
+
+    for name in ["api", "dev", "api-gpu"]:
+        extra_hosts = " ".join(compose["services"][name].get("extra_hosts", []))
+
+        assert "host.docker.internal:host-gateway" in extra_hosts, name
+
+
 def test_ui_healthcheck_checks_streamlit_not_the_api_port():
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
 

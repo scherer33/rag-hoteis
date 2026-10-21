@@ -24,6 +24,8 @@ services:
     environment:
       QDRANT_URL: http://qdrant:6333
       HF_HOME: /models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command:
       [
         "uvicorn",
@@ -81,6 +83,8 @@ services:
     environment:
       QDRANT_URL: http://qdrant:6333
       HF_HOME: /models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - .:/app
       - model_cache:/models
@@ -101,6 +105,8 @@ services:
     environment:
       QDRANT_URL: http://qdrant:6333
       HF_HOME: /models
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     volumes:
