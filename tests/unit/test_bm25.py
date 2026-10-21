@@ -33,6 +33,7 @@ def test_bm25_finds_exact_keyword():
     )
     hits = index.search("camara fria", k=1)
     assert hits[0].chunk.chunk_id == "a:0"
+    assert hits[0].relevance == 0.0  # lexical hits are not calibrated confidence
 
 
 def test_bm25_respects_department_filter():
@@ -49,13 +50,16 @@ def test_bm25_respects_department_filter():
 def test_rrf_merges_two_rankings():
     c1 = _chunk("a:0", "x")
     c2 = _chunk("b:0", "y")
-    first = [RetrievedChunk(chunk=c1, score=1.0, source="vector")]
+    first = [RetrievedChunk(chunk=c1, score=1.0, source="vector", relevance=0.8)]
     second = [
-        RetrievedChunk(chunk=c2, score=1.0, source="bm25"),
-        RetrievedChunk(chunk=c1, score=0.5, source="bm25"),
+        RetrievedChunk(chunk=c2, score=1.0, source="bm25", relevance=0.0),
+        RetrievedChunk(chunk=c1, score=0.5, source="bm25", relevance=0.0),
     ]
 
     fused = reciprocal_rank_fusion([first, second])
 
     assert [hit.chunk.chunk_id for hit in fused] == ["a:0", "b:0"]
     assert fused[0].source == "hybrid"
+    # Relevance is carried from the calibrated source, never taken from RRF.
+    assert fused[0].relevance == 0.8
+    assert fused[1].relevance == 0.0

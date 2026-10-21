@@ -51,6 +51,10 @@ class RetrievedChunk(BaseModel):
     chunk: Chunk
     score: float
     source: str
+    # Calibrated evidence for abstention/confidence. `score` is only a ranking
+    # signal (cosine, RRF or sigmoid); RRF scores are not comparable to a
+    # probability threshold, so they must never be used as confidence.
+    relevance: float
 
 
 class Citation(BaseModel):

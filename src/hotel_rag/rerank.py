@@ -19,8 +19,9 @@ class Reranker(Protocol):
 class CrossEncoderReranker:
     """Cross-encoder reranker; weights are only loaded on first use.
 
-    Scores are sigmoid-normalised, so the configured abstention threshold has
-    the same meaning across vector, hybrid and reranked retrieval.
+    Scores are sigmoid-normalised and stored as both `score` and `relevance`,
+    so the abstention threshold is a probability. RRF and cosine values only
+    act as ranking signals and never masquerade as confidence.
     """
 
     def __init__(self, model_name: str = "BAAI/bge-reranker-v2-m3") -> None:
@@ -47,6 +48,11 @@ class CrossEncoderReranker:
         )
 
         return [
-            RetrievedChunk(chunk=hit.chunk, score=sigmoid(float(score)), source="rerank")
+            RetrievedChunk(
+                chunk=hit.chunk,
+                score=sigmoid(float(score)),
+                source="rerank",
+                relevance=sigmoid(float(score)),
+            )
             for hit, score in ranked[:top_k]
         ]

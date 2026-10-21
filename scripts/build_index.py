@@ -42,6 +42,11 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--embed-model", default="BAAI/bge-m3")
     parser.add_argument("--chunk-size", type=int, default=800)
     parser.add_argument("--overlap", type=int, default=120)
+    parser.add_argument(
+        "--append",
+        action="store_true",
+        help="keep existing points instead of recreating the collection first",
+    )
     args = parser.parse_args(argv)
 
     if args.qdrant_url == ":memory:":
@@ -53,6 +58,8 @@ def main(argv: list[str] | None = None) -> int:
         collection=args.collection,
         vector_size=embedder.dimension,
     )
+    if not args.append:
+        store.recreate()
     indexed = build_index(args.corpus, store, embedder, args.chunk_size, args.overlap)
     print(f"indexed {indexed} chunks from {args.corpus} into {args.collection}")
     return 0

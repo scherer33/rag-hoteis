@@ -36,6 +36,12 @@ class ChunkStore:
                 vectors_config=VectorParams(size=self.vector_size, distance=Distance.COSINE),
             )
 
+    def recreate(self) -> None:
+        """Drop and recreate the collection so removed documents leave no stale points."""
+        if self.client.collection_exists(self.collection):
+            self.client.delete_collection(self.collection)
+        self._ensure_collection()
+
     def upsert(self, chunks: list[Chunk], vectors: list[list[float]]) -> None:
         points = [
             PointStruct(
@@ -68,11 +74,13 @@ class ChunkStore:
         for point in response.points:
             payload = dict(point.payload or {})
             payload.pop("dept", None)
+            score = float(point.score)
             hits.append(
                 RetrievedChunk(
                     chunk=Chunk(**payload),
-                    score=float(point.score),
+                    score=score,
                     source="vector",
+                    relevance=score,
                 )
             )
         return hits

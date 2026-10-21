@@ -25,6 +25,7 @@ resposta.
   locais → retrieval híbrido → reranking → geração com citações → abstenção.
 - **Comparação honesta de configurações**: `vector` vs. `hybrid` vs.
   `hybrid_rerank`, com recall@k, MRR e nDCG@k sobre um golden set de 40 perguntas.
+  Os três modos são selecionáveis na UI e na API.
 - **Citações rastreáveis**: cada citação aponta para `doc_id`, título,
   departamento e o excerto exato (com offsets de caracteres).
 - **Abstenção em vez de alucinação**: limiar de score + marcador explícito
@@ -44,7 +45,7 @@ data/corpus/*.md            (35 documentos, frontmatter YAML)
         ├── store.py        Qdrant (in-memory nos testes)
         ├── bm25.py         BM25Plus + Reciprocal Rank Fusion
         ├── rerank.py       bge-reranker-v2-m3 (scores normalizados)
-        └── retrieval.py    modos: vector | hybrid | hybrid_rerank
+        └── retrieval.py    modos: vector | hybrid | hybrid_rerank (selecionáveis)
                 │
         generation.py       prompt numerado [1..n], citações, ABSTAIN
                 │
@@ -63,7 +64,7 @@ make up                       # API :8000 + UI :8501
 ```
 
 - UI: <http://localhost:8501>
-- API/OpenAPI: <http://localhost:8000/docs>
+- API/OpenAPI: <http://localhost:8000/docs> (inclui `/sources` com os documentos indexados)
 - Qdrant: <http://localhost:6333/dashboard>
 
 Configuração do LLM: `config/llm.yaml` guarda apenas os valores não-secretos
@@ -75,7 +76,7 @@ segredos versionados.
 Testes (ambiente canónico):
 
 ```bash
-make test     # docker compose run --rm dev pytest -m "not integration"
+make test     # docker compose run --rm dev pytest (inclui integração)
 make lint
 ```
 
@@ -83,7 +84,7 @@ make lint
 
 ```bash
 uv sync --all-extras
-uv run pytest -m "not integration"
+uv run pytest
 uv run ruff check . && uv run ruff format --check .
 ```
 
@@ -162,8 +163,10 @@ docs/decisions/       ADRs
   para acelerar localmente, o profile `gpu` constrói um target com torch CUDA.
 - **Demo pública (HF Spaces):** usa Qdrant in-memory e reconstrói o índice no
   arranque; o cold start é lento e o estado não persiste.
-- **RAGAS** está no extra `eval`, mas não corre no CI (exige chave de LLM e
-  modelos locais); as métricas de retrieval são determinísticas e correm offline.
+- **Métricas de resposta (RAGAS):** não implementadas nesta versão. Exigem um
+  modelo juiz e uma chave de LLM, o que tornaria a avaliação não determinística;
+  as métricas de retrieval cobrem o que o CI consegue garantir offline. Ficam
+  como trabalho futuro, com um golden set de contextos ao nível do chunk.
 
 ## Licença
 

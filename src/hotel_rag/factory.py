@@ -49,7 +49,7 @@ def build_pipeline(
     )
     generator = AnswerGenerator(llm, min_score=settings.abstain_min_score)
 
-    return HotelRAG(retriever, generator)
+    return HotelRAG(retriever, generator, documents=documents)
 
 
 def create_llm_client(settings: Settings) -> LLMClient:

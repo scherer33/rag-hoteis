@@ -1,6 +1,11 @@
 from hotel_rag.models import Citation
 
 
+def citations_from_payload(payload: list[dict]) -> list[Citation]:
+    """Parse the JSON citations returned by /answer into domain objects."""
+    return [Citation.model_validate(item) for item in payload]
+
+
 def citation_label(citation: Citation, index: int = 1) -> str:
     """Short label for a citation, e.g. ``[1] AC erro E3 · manutencao · pág. 3``."""
     parts = [f"[{index}] {citation.title}", citation.dept.value]

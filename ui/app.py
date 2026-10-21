@@ -5,16 +5,29 @@ import os
 import requests
 import streamlit as st
 
-from ui.logic import citation_label, citation_markdown
+from hotel_rag.models import Dept
+from ui.logic import citation_label, citation_markdown, citations_from_payload
 
 API_URL = os.getenv("API_URL", "http://localhost:8000")
-DEPARTMENTS = ["todos", "rececao", "fnb", "copa", "estacionamento", "manutencao"]
+DEPARTMENTS = ["todos", *(dept.value for dept in Dept)]
+MODE_LABELS = {
+    "hybrid_rerank": "Híbrido + rerank (melhor)",
+    "hybrid": "Híbrido (RRF)",
+    "vector": "Vetorial",
+}
 
 
-def ask(question: str, top_k: int = 5, dept: str | None = None) -> dict:
+def ask(
+    question: str,
+    top_k: int = 5,
+    dept: str | None = None,
+    mode: str | None = None,
+) -> dict:
     payload: dict = {"question": question, "top_k": top_k}
     if dept:
         payload["dept"] = dept
+    if mode:
+        payload["mode"] = mode
 
     response = requests.post(f"{API_URL}/answer", json=payload, timeout=120)
     response.raise_for_status()
@@ -33,6 +46,12 @@ def main() -> None:
         st.header("Filtros")
         department = st.selectbox("Departamento", DEPARTMENTS)
         top_k = st.slider("Excertos a recuperar", min_value=1, max_value=10, value=5)
+        mode = st.selectbox(
+            "Modo de retrieval",
+            list(MODE_LABELS),
+            format_func=lambda key: MODE_LABELS[key],
+            help="Compara as três configurações avaliadas no relatório.",
+        )
 
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -52,10 +71,16 @@ def main() -> None:
     with st.chat_message("assistant"):
         with st.spinner("A procurar na documentação…"):
             try:
-                answer = ask(question, top_k=top_k, dept=dept)
+                answer = ask(question, top_k=top_k, dept=dept, mode=mode)
             except requests.RequestException as error:
                 st.error(f"Não foi possível contactar a API: {error}")
                 return
+
+        if "text" not in answer:
+            st.error("A API devolveu uma resposta inesperada.")
+            return
+
+        citations = citations_from_payload(answer.get("citations", []))
 
         if answer["abstained"]:
             st.warning(
@@ -64,12 +89,12 @@ def main() -> None:
         else:
             st.markdown(answer["text"])
 
-        for index, citation in enumerate(answer["citations"], start=1):
+        for index, citation in enumerate(citations, start=1):
             with st.expander(citation_label(citation, index), expanded=False):
                 st.markdown(citation_markdown(citation))
 
-        if answer["citations"]:
-            st.caption(f"Confiança: {answer['confidence']:.2f}")
+        if citations:
+            st.caption(f"Relevância: {answer.get('confidence', 0.0):.2f}")
 
     st.session_state.messages.append({"role": "assistant", "content": answer["text"]})
 

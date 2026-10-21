@@ -30,6 +30,11 @@ def build_prompt(question: str, chunks: list[RetrievedChunk]) -> str:
     )
 
 
+def _is_abstain(text: str) -> bool:
+    """True only when the whole reply is the marker (not a word inside a sentence)."""
+    return text.strip().strip("*_`\"' .\n\t").upper() == ABSTAIN_MARKER
+
+
 def parse_citations(text: str, chunks: list[RetrievedChunk]) -> list[Citation]:
     citations: list[Citation] = []
     seen: set[int] = set()
@@ -47,7 +52,9 @@ def parse_citations(text: str, chunks: list[RetrievedChunk]) -> list[Citation]:
                 title=chunk.metadata.title,
                 dept=chunk.metadata.dept,
                 page=chunk.page,
-                snippet=chunk.text[:200],
+                # The excerpt is the whole chunk, so it matches the cited
+                # [char_start, char_end) range exactly.
+                snippet=chunk.text,
                 char_start=chunk.char_start,
                 char_end=chunk.char_end,
             )
@@ -70,17 +77,26 @@ class AnswerGenerator:
         if not chunks:
             return self._abstain()
 
-        top_score = float(chunks[0].score)
-        if top_score < self.min_score:
+        # Rank scores are not comparable across modes (RRF is ~0.03, cosine is
+        # a similarity, the reranker is a probability). Only `relevance` is
+        # calibrated, so it is the single input to the abstention decision.
+        evidence = min(1.0, max(0.0, float(chunks[0].relevance)))
+        if evidence < self.min_score:
             return self._abstain()
 
         text = self.llm.complete(build_prompt(question, chunks))
-        if ABSTAIN_MARKER in text.upper():
+        if _is_abstain(text):
+            return self._abstain()
+
+        citations = parse_citations(text, chunks)
+        if not citations:
+            # An answer without citations is not grounded; treat it as a
+            # failure instead of presenting it as supported.
             return self._abstain()
 
         return Answer(
             text=text,
-            citations=parse_citations(text, chunks),
+            citations=citations,
             abstained=False,
-            confidence=max(0.0, top_score),
+            confidence=evidence,
         )

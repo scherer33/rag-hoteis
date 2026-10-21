@@ -18,16 +18,28 @@ Três configurações comparáveis, selecionáveis em runtime:
 2. **`hybrid`** — união de `vector` e BM25 com **Reciprocal Rank Fusion**:
    `score(d) = Σ 1 / (k + rank_i(d))`, com `k = 60`.
 3. **`hybrid_rerank`** — os 20 candidatos fundidos passam por um cross-encoder
-   (`bge-reranker-v2-m3`); os scores são normalizados com sigmoid para que o
-   limiar de abstenção tenha o mesmo significado nas três configurações.
+   (`bge-reranker-v2-m3`); os scores são normalizados com sigmoid.
+
+O `score` que ordena os resultados **não** é uma confiança comparável entre
+modos: o RRF vale ~`1/61` por lista, o cosseno é uma similaridade e o reranker é
+uma probabilidade. Por isso cada `RetrievedChunk` carrega também `relevance`,
+que é o único valor usado para abstenção e para a confiança devolvida pela API:
+
+- `vector`: `relevance = ` cosseno;
+- `hybrid`: `relevance = ` cosseno do melhor hit vetorial que contribuiu para o
+  chunk fundido (`0` se o chunk só apareceu no BM25 — nesse caso abstém-se em
+  vez de adivinhar);
+- `hybrid_rerank`: `relevance = ` sigmoid do cross-encoder.
 
 O BM25 usa `BM25Plus`, não `BM25Okapi`: em corpora pequenos o IDF do Okapi pode
 colapsar para zero quando um termo aparece em metade dos documentos.
 
 A abstenção é decidida antes e depois da geração:
 
-- **antes:** sem chunks ou score do topo abaixo de `ABSTAIN_MIN_SCORE`;
-- **depois:** o LLM responde `ABSTAIN` quando o contexto não contém a resposta.
+- **antes:** sem chunks ou `relevance` do topo abaixo de `ABSTAIN_MIN_SCORE`;
+- **depois:** o LLM responde `ABSTAIN` quando o contexto não contém a resposta,
+  ou a resposta não contém nenhuma citação `[n]` — uma resposta sem fonte não é
+  apresentada como fundamentada.
 
 ## Porquê RRF e não soma de scores
 

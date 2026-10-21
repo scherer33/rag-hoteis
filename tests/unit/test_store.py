@@ -44,6 +44,7 @@ def test_search_returns_most_similar_first():
     hits = store.search(_vec(0), k=2)
     assert hits[0].chunk.doc_id == "d0"
     assert hits[0].source == "vector"
+    assert hits[0].relevance == hits[0].score
 
 
 def test_search_filters_by_department():
@@ -52,3 +53,12 @@ def test_search_filters_by_department():
 
     hits = store.search(_vec(1), k=5, dept=Dept.COPA)
     assert [hit.chunk.metadata.dept for hit in hits] == [Dept.COPA]
+
+
+def test_recreate_drops_stale_points():
+    store = ChunkStore(vector_size=8)
+    store.upsert([_chunk(0, Dept.COPA)], [_vec(0)])
+
+    store.recreate()
+
+    assert store.count() == 0

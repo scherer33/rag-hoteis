@@ -36,25 +36,38 @@ class BM25Index:
         )
 
         return [
-            RetrievedChunk(chunk=chunk, score=score, source="bm25") for score, chunk in ranked[:k]
+            RetrievedChunk(chunk=chunk, score=score, source="bm25", relevance=0.0)
+            for score, chunk in ranked[:k]
         ]
 
 
 def reciprocal_rank_fusion(
     result_lists: list[list[RetrievedChunk]], k: int = 60
 ) -> list[RetrievedChunk]:
-    """Fuse ranked lists with Reciprocal Rank Fusion (RRF)."""
+    """Fuse ranked lists with Reciprocal Rank Fusion (RRF).
+
+    The fused `score` is the RRF rank score (tiny, not a probability). The
+    calibrated `relevance` is carried over from the best contributing hit, so
+    abstention never compares an RRF value against a probability threshold.
+    """
     scores: dict[str, float] = defaultdict(float)
+    relevance: dict[str, float] = defaultdict(float)
     chunks: dict[str, Chunk] = {}
 
     for results in result_lists:
         for rank, hit in enumerate(results, start=1):
             chunk_id = hit.chunk.chunk_id
             scores[chunk_id] += 1.0 / (k + rank)
+            relevance[chunk_id] = max(relevance[chunk_id], hit.relevance)
             chunks.setdefault(chunk_id, hit.chunk)
 
     ordered = sorted(scores.items(), key=lambda item: item[1], reverse=True)
     return [
-        RetrievedChunk(chunk=chunks[chunk_id], score=score, source="hybrid")
+        RetrievedChunk(
+            chunk=chunks[chunk_id],
+            score=score,
+            source="hybrid",
+            relevance=relevance[chunk_id],
+        )
         for chunk_id, score in ordered
     ]

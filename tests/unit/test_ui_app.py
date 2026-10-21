@@ -22,12 +22,13 @@ def test_ask_posts_to_api(monkeypatch):
 
     monkeypatch.setattr(ui.app.requests, "post", fake_post)
 
-    body = ui.app.ask("a que horas é o check-out?", top_k=3, dept="rececao")
+    body = ui.app.ask("a que horas é o check-out?", top_k=3, dept="rececao", mode="vector")
 
     assert body["text"] == "ok"
     assert calls["json"] == {
         "question": "a que horas é o check-out?",
         "top_k": 3,
         "dept": "rececao",
+        "mode": "vector",
     }
     assert calls["url"].endswith("/answer")

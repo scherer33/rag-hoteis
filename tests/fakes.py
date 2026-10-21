@@ -26,7 +26,9 @@ class FakeEmbedder:
         return [byte / 255.0 for byte in digest[: self.dimension]]
 
 
-def make_retrieved(doc_id: str, score: float = 1.0) -> RetrievedChunk:
+def make_retrieved(
+    doc_id: str, score: float = 1.0, relevance: float | None = None
+) -> RetrievedChunk:
     """Minimal RetrievedChunk for tests that only care about doc ids."""
     metadata = DocMetadata(
         doc_id=doc_id,
@@ -45,4 +47,9 @@ def make_retrieved(doc_id: str, score: float = 1.0) -> RetrievedChunk:
         char_end=len(f"texto de {doc_id}"),
         metadata=metadata,
     )
-    return RetrievedChunk(chunk=chunk, score=score, source="test")
+    return RetrievedChunk(
+        chunk=chunk,
+        score=score,
+        source="test",
+        relevance=score if relevance is None else relevance,
+    )

@@ -15,7 +15,8 @@ Um único `Dockerfile` multi-stage:
 
 1. **`base`** — `python:3.12-slim`, `uv`, dependências de produção (incluindo o
    extra `ml`) instaladas em `/opt/venv`.
-2. **`dev`** — acrescenta `--all-extras` (pytest, ruff, ragas) e corre os testes.
+2. **`dev`** — acrescenta `--all-extras` (pytest, ruff) e corre os testes,
+   incluindo os de integração (usam fakes, sem descarregar modelos).
 3. **`runtime`** — só produção, utilizador não-root `app`, healthcheck em
    `/health`.
 

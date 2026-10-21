@@ -13,7 +13,7 @@ logs:
 	docker compose logs -f --tail=100
 
 test:
-	docker compose run --rm dev pytest -m "not integration"
+	docker compose run --rm dev pytest
 
 lint:
 	docker compose run --rm dev ruff check .

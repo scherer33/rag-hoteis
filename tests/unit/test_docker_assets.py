@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).parents[2]
 
 
@@ -19,3 +21,12 @@ def test_dockerfile_is_multistage_nonroot_and_caches_models():
     assert text.count("FROM ") >= 3
     assert "USER " in text
     assert "HF_HOME" in text
+
+
+def test_ui_healthcheck_checks_streamlit_not_the_api_port():
+    compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
+
+    check = " ".join(compose["services"]["ui"]["healthcheck"]["test"])
+
+    assert "8501" in check
+    assert "8000" not in check

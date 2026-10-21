@@ -2,7 +2,7 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [main, master]
   pull_request:
   workflow_dispatch:
 
@@ -21,7 +21,7 @@ jobs:
       - run: uv sync --all-extras
       - run: uv run ruff check .
       - run: uv run ruff format --check .
-      - run: uv run pytest -m "not integration"
+      - run: uv run pytest
 
   docker:
     runs-on: ubuntu-latest
@@ -41,7 +41,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Run tests in the canonical image
-        run: docker run --rm hotel-rag-dev:ci pytest -m "not integration"
+        run: docker run --rm hotel-rag-dev:ci pytest
 
   eval-gate:
     if: >-

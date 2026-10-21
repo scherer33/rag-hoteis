@@ -27,6 +27,15 @@ def _chunk(cid: str, text: str) -> Chunk:
     )
 
 
+def _hit(chunk: Chunk, score: float = 1.0, relevance: float | None = None) -> RetrievedChunk:
+    return RetrievedChunk(
+        chunk=chunk,
+        score=score,
+        source="vector",
+        relevance=score if relevance is None else relevance,
+    )
+
+
 class StubStore:
     def __init__(self, hits: list[RetrievedChunk]) -> None:
         self.hits = hits
@@ -53,12 +62,59 @@ def test_all_modes_return_top_k(mode):
     chunk = _chunk("a:0", "camara fria")
     retriever = Retriever(
         StubEmbedder(),
-        StubStore([RetrievedChunk(chunk=chunk, score=1.0, source="vector")]),
+        StubStore([_hit(chunk)]),
         BM25Index([chunk]),
         reranker=ReverseReranker(),
         mode=mode,
     )
     assert len(retriever.retrieve("camara fria", top_k=1)) == 1
+
+
+def test_hybrid_keeps_calibrated_relevance_from_vector_hits():
+    vector_hit = _chunk("a:0", "camara fria avariada")
+    bm25_only = _chunk("b:0", "camara fria limpeza")
+
+    retriever = Retriever(
+        StubEmbedder(),
+        StubStore([_hit(vector_hit, score=0.75, relevance=0.75)]),
+        BM25Index([vector_hit, bm25_only]),
+        mode="hybrid",
+    )
+
+    hits = {hit.chunk.chunk_id: hit for hit in retriever.retrieve("camara fria", top_k=5)}
+
+    assert hits["a:0"].relevance == 0.75
+    assert hits["a:0"].score < 0.1  # RRF rank score, not a confidence
+    assert hits["b:0"].relevance == 0.0
+
+
+def test_retrieve_accepts_a_mode_override():
+    first = _chunk("a:0", "primeiro")
+    second = _chunk("b:0", "segundo")
+    retriever = Retriever(
+        StubEmbedder(),
+        StubStore([_hit(first), _hit(second)]),
+        BM25Index([first, second]),
+        reranker=ReverseReranker(),
+        mode="hybrid_rerank",
+    )
+
+    hits = retriever.retrieve("q", top_k=2, mode="vector")
+
+    assert [hit.chunk.chunk_id for hit in hits] == ["a:0", "b:0"]
+
+
+def test_retrieve_rejects_an_unknown_mode_override():
+    chunk = _chunk("a:0", "x")
+    retriever = Retriever(
+        StubEmbedder(),
+        StubStore([_hit(chunk)]),
+        BM25Index([chunk]),
+        mode="vector",
+    )
+
+    with pytest.raises(ValueError):
+        retriever.retrieve("q", mode="magic")
 
 
 def test_rewrite_is_applied_before_retrieval():
@@ -72,7 +128,7 @@ def test_rewrite_is_applied_before_retrieval():
     chunk = _chunk("a:0", "x")
     retriever = Retriever(
         RecordingEmbedder(),
-        StubStore([RetrievedChunk(chunk=chunk, score=1.0, source="vector")]),
+        StubStore([_hit(chunk)]),
         BM25Index([chunk]),
         mode="vector",
     )
@@ -87,7 +143,7 @@ def test_unknown_mode_is_rejected():
     with pytest.raises(ValueError):
         Retriever(
             StubEmbedder(),
-            StubStore([RetrievedChunk(chunk=chunk, score=1.0, source="vector")]),
+            StubStore([_hit(chunk)]),
             BM25Index([chunk]),
             mode="magic",
         )
@@ -98,7 +154,7 @@ def test_hybrid_rerank_requires_a_reranker():
     with pytest.raises(ValueError):
         Retriever(
             StubEmbedder(),
-            StubStore([RetrievedChunk(chunk=chunk, score=1.0, source="vector")]),
+            StubStore([_hit(chunk)]),
             BM25Index([chunk]),
             mode="hybrid_rerank",
         )
