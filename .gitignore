@@ -17,3 +17,6 @@ results/*
 !results/latest.json
 models/
 .superpowers/
+
+# Local Compose override (host paths, never commit)
+docker-compose.override.yml

@@ -32,6 +32,14 @@ def test_services_that_call_the_host_llm_map_host_gateway():
         assert "host.docker.internal:host-gateway" in extra_hosts, name
 
 
+def test_dockerfile_puts_project_root_on_pythonpath_for_streamlit():
+    text = (ROOT / "Dockerfile").read_text(encoding="utf-8")
+
+    # Streamlit runs the script with sys.path[0] = /app/ui, so package-style
+    # imports like `from ui.logic import ...` need /app on PYTHONPATH.
+    assert "PYTHONPATH=/app" in text
+
+
 def test_ui_healthcheck_checks_streamlit_not_the_api_port():
     compose = yaml.safe_load((ROOT / "docker-compose.yml").read_text(encoding="utf-8"))
 
