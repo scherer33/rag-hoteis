@@ -37,10 +37,25 @@ retrievers — uma escolha robusta e fácil de defender em avaliação.
 
 ## Resultados medidos
 
-Gerados por `make eval` sobre 39 perguntas (34 PT, 5 EN), `k = 5`, corpus real
-do projeto. A tabela é atualizada a partir de `results/latest.json`.
+Gerados por `make eval` sobre 40 perguntas (35 PT, 5 EN), `k = 5`, corpus real
+do projeto (`results/latest.json`):
 
-<!-- EVAL_RESULTS -->
+| Configuração | recall@5 | MRR | nDCG@5 |
+|---|---|---|---|
+| `vector` | 1.000 | 0.988 | 0.991 |
+| `hybrid` | 1.000 | 0.983 | 0.988 |
+| `hybrid_rerank` | 1.000 | 1.000 | 1.000 |
+
+O recall está saturado: o corpus é pequeno e as perguntas derivam dos documentos,
+por isso o documento certo entra quase sempre no top-5. O que diferencia as
+configurações é a ordem: o reranker acerta o primeiro lugar em todas as
+perguntas, e o híbrido sem reranker fica ligeiramente abaixo do vetor puro
+(0.983 vs. 0.988), porque o BM25 promove termos comuns em perguntas
+parafraseadas.
+
+**Conclusão defensável:** neste corpus, o reranker é o que traz ganho mensurável;
+o híbrido só se justifica com um benchmark mais difícil (nomes, códigos,
+paráfrases coloquiais) ou com um corpus maior.
 
 ## Consequências
 

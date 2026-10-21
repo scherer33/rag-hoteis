@@ -14,5 +14,6 @@ data/index.jsonl
 data/generated/
 results/*
 !results/.gitkeep
+!results/latest.json
 models/
 .superpowers/

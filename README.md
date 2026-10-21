@@ -24,7 +24,7 @@ resposta.
 - **RAG completo e avaliado**: ingestão → chunking com offsets → embeddings
   locais → retrieval híbrido → reranking → geração com citações → abstenção.
 - **Comparação honesta de configurações**: `vector` vs. `hybrid` vs.
-  `hybrid_rerank`, com recall@k, MRR e nDCG@k sobre um golden set de 39 perguntas.
+  `hybrid_rerank`, com recall@k, MRR e nDCG@k sobre um golden set de 40 perguntas.
 - **Citações rastreáveis**: cada citação aponta para `doc_id`, título,
   departamento e o excerto exato (com offsets de caracteres).
 - **Abstenção em vez de alucinação**: limiar de score + marcador explícito
@@ -92,7 +92,30 @@ O golden set (`data/golden/golden_set.jsonl`) cobre os cinco departamentos, incl
 perguntas cuja resposta só existe na versão 2 do check-in, perguntas de tabela
 (temperaturas, alergénios) e cinco perguntas em inglês.
 
-<!-- EVAL_RESULTS -->
+### Resultados medidos
+
+`BAAI/bge-m3` + `BAAI/bge-reranker-v2-m3`, 40 perguntas (35 PT, 5 EN), `k = 5`,
+índice com 35 documentos. Relatório completo em `results/latest.json`.
+
+| Configuração | recall@5 | MRR | nDCG@5 |
+|---|---|---|---|
+| `vector` | 1.000 | 0.988 | 0.991 |
+| `hybrid` | 1.000 | 0.983 | 0.988 |
+| `hybrid_rerank` | **1.000** | **1.000** | **1.000** |
+
+**Como ler estes números.** O recall satura porque o corpus é pequeno (35
+documentos) e as perguntas foram redigidas a partir dos próprios documentos: com
+5 chunks recuperados, o documento certo entra quase sempre. O sinal útil está no
+**ranking**: o reranker coloca o documento relevante em primeiro lugar em todas
+as 40 perguntas (MRR = 1.0), enquanto o híbrido sem reranker é ligeiramente
+*pior* que o vetor puro (0.983 vs. 0.988) — o BM25 promove correspondências de
+palavras comuns em perguntas parafraseadas, e o RRF mistura esse ruído. É um
+resultado contraintuitivo e está reportado como tal: a conclusão não é "híbrido
+é sempre melhor", é "o reranker resolve a ordem final; o híbrido precisa de um
+benchmark mais difícil para justificar o custo".
+
+Um benchmark mais exigente (perguntas adversariais, paráfrases coloquiais,
+documentos distratores) é o próximo passo para tornar o recall discriminativo.
 
 **Metodologia.** Para cada pergunta, o retriever devolve 5 chunks; as métricas são
 calculadas ao nível do `doc_id` (um documento relevante conta uma vez), com
@@ -108,7 +131,7 @@ api/                  FastAPI (/health, /answer)
 ui/                   Streamlit (cliente fino da API)
 scripts/              build_index.py, check_eval_threshold.py, start_space.sh
 data/corpus/          35 documentos markdown com frontmatter
-data/golden/          golden set JSONL (39 perguntas)
+data/golden/          golden set JSONL (40 perguntas)
 tests/                unit (sem modelos) + integration (in-memory)
 docs/decisions/       ADRs
 ```
