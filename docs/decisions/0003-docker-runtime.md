@@ -47,7 +47,8 @@ Detalhes que evitam armadilhas comuns:
 ## Consequências
 
 - O primeiro build demora vários minutos (torch + export de camadas); builds
-  seguintes usam cache.
+  seguintes usam cache. Com torch CPU a imagem de runtime fica em ~2,6 GB
+  (seriam ~10 GB com as wheels CUDA).
 - O CI constrói a imagem `dev` com cache `gha`, o que mantém o custo aceitável.
 - A demo em HF Spaces arranca mais devagar (embedding do corpus no startup),
   aceitável para um Space gratuito.
