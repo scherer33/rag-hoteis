@@ -52,3 +52,35 @@ def test_golden_dataset_references_real_documents():
 
     missing = {doc_id for item in items for doc_id in item.relevant_doc_ids if doc_id not in known}
     assert missing == set()
+
+
+def test_hard_dataset_is_complete_and_multilingual():
+    items = load_golden(Path(__file__).parents[2] / "data" / "golden" / "golden_set_hard.jsonl")
+
+    assert len(items) >= 18
+    assert sum(item.language == "en" for item in items) >= 5
+    assert all(item.relevant_doc_ids for item in items)
+    assert any(len(item.relevant_doc_ids) > 1 for item in items)
+
+
+def test_hard_dataset_covers_every_department():
+    items = load_golden(Path(__file__).parents[2] / "data" / "golden" / "golden_set_hard.jsonl")
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item.dept.value] = counts.get(item.dept.value, 0) + 1
+
+    assert len(counts) == 5
+    assert min(counts.values()) >= 2
+
+
+def test_hard_dataset_references_real_documents_and_new_questions():
+    from hotel_rag.corpus import load_corpus
+
+    root = Path(__file__).parents[2]
+    known = {document.metadata.doc_id for document in load_corpus(root / "data" / "corpus")}
+    hard = load_golden(root / "data" / "golden" / "golden_set_hard.jsonl")
+    original = load_golden(root / "data" / "golden" / "golden_set.jsonl")
+
+    missing = {doc_id for item in hard for doc_id in item.relevant_doc_ids if doc_id not in known}
+    assert missing == set()
+    assert not {item.question for item in hard} & {item.question for item in original}

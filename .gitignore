@@ -15,6 +15,7 @@ data/generated/
 results/*
 !results/.gitkeep
 !results/latest.json
+!results/hard.json
 models/
 .superpowers/
 

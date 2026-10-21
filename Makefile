@@ -1,4 +1,4 @@
-.PHONY: build up down logs test lint fmt index eval shell
+.PHONY: build up down logs test lint fmt index eval eval-hard shell
 
 build:
 	docker compose build
@@ -26,6 +26,9 @@ index:
 
 eval:
 	docker compose run --rm dev python -m hotel_rag.eval.run
+
+eval-hard:
+	docker compose run --rm dev python -m hotel_rag.eval.run --golden data/golden/golden_set_hard.jsonl --out results/hard.json
 
 shell:
 	docker compose run --rm dev bash

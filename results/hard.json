@@ -1,0 +1,28 @@
+{
+  "meta": {
+    "generated_at": "2026-10-21T19:56:13.132192+00:00",
+    "k": 5,
+    "k_candidates": 20,
+    "questions": 22,
+    "embed_model": "BAAI/bge-m3",
+    "rerank_model": "BAAI/bge-reranker-v2-m3"
+  },
+  "results": {
+    "vector": {
+      "recall@k": 1.0,
+      "mrr": 1.0,
+      "ndcg@k": 1.0
+    },
+    "hybrid": {
+      "recall@k": 0.9090909090909091,
+      "mrr": 0.8446969696969696,
+      "ndcg@k": 0.8604852980942451
+    },
+    "hybrid_rerank": {
+      "recall@k": 1.0,
+      "mrr": 1.0,
+      "ndcg@k": 1.0
+    }
+  },
+  "markdown": "| config | recall@k | mrr | ndcg@k |\n|---|---|---|---|\n| vector | 1.000 | 1.000 | 1.000 |\n| hybrid | 0.909 | 0.845 | 0.860 |\n| hybrid_rerank | 1.000 | 1.000 | 1.000 |"
+}
