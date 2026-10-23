@@ -38,6 +38,7 @@ COPY ui/ ./ui/
 COPY scripts/ ./scripts/
 COPY config/ ./config/
 COPY data/ ./data/
+COPY .streamlit/ ./.streamlit/
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --no-dev --extra ml

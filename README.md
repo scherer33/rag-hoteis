@@ -11,6 +11,11 @@ resposta.
 
 ## UI
 
+Interface Streamlit com tema editorial claro: chips de perguntas de exemplo,
+cartões de citação por SOP e um medidor de confiança na resposta (verde para
+"Alta", terracota para "Média", âmbar para "Baixa"); quando não há evidência
+suficiente, a UI mostra o cartão de abstenção em vez de adivinhar.
+
 ![Pergunta e resposta com citações](docs/images/ui-answer.png)
 
 <details>
